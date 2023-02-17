@@ -13,6 +13,16 @@ struct ContentView: View {
     VStack {
       VideoPlayerView(asset: asset)
         .frame(maxHeight: 300)
+
+      Button("Export") {
+        let session = AVAssetExportSession(asset: asset, presetName: AVAssetExportPresetHighestQuality)!
+        let outputURL = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString + ".mov")
+        session.outputURL = outputURL
+        session.outputFileType = .mov
+        session.exportAsynchronously {
+          assert(session.error == nil) // <- crashes here
+        }
+      }
     }
     .padding()
     .onAppear {
@@ -31,6 +41,11 @@ struct ContentView: View {
         isComposable? \(isComposable)
         hasProtectedContent? \(hasProtectedContent)
         """)
+
+          let videoTracks = try await asset.loadTracks(withMediaType: .video)
+          let formatDescriptions = try await videoTracks[0].load(.formatDescriptions)
+
+          print("format descriptions: \(formatDescriptions)")
         } catch {
           print("error: \(error)")
         }
